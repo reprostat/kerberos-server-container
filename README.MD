@@ -1,41 +1,21 @@
 ↖️ Table of Contents
 
-<h1 align="center"><code>Krb5 Server - Docker Image</code></h1>
+# A Docker container of a Kerberos server
 
-<div align="center">
-  <a href="https://github.com/gcavalcante8808/docker-krb5-server/actions/workflows/cd.yaml">
-    <img src="https://github.com/gcavalcante8808/docker-krb5-server/actions/workflows/cd.yaml/badge.svg">
-  </a>
-  <a href="https://github.com/gcavalcante8808/docker-krb5-server/actions/workflows/tests.yaml">
-    <img src="https://github.com/gcavalcante8808/docker-krb5-server/actions/workflows/tests.yaml/badge.svg">
-  </a>
-  <a href="https://www.buymeacoffee.com/gcavalcante8808">
-    <img src="https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee" alt="buy me a coffee">
-  </a>
-</div>
-<br>
-
-Krb5 Server
+## Kerberos server
 -----------
 
-This is a gcavalcante8808/krb5-server image with MIT Kerberos v5 installed with Alpine as base image. 
+This is a reprostat fork of the gcavalcante8808/krb5-server image with MIT Kerberos v5.
 
-Daily Builds are available and linux/amd64 and linux/arm64 support.
+Modifications:
+  - installed on Debian trixie as base image
+  - /etc/krb5.conf can be provided
 
-Simple Usage
+## Deployment
 ------------
 
-If you just want to create a Krb5 Server from scratch, just clone the repository and use docker compose to bring it up quickly:
-
-```
-    cd tmp
-    git clone https://github.com/gcavalcante8808/docker-krb5-server.git
-    cd docker-krb5-server
-    docker compose up -d
-```
-
-By default, an anonymous volume will be created and mounted on /var/lib/krb5kdc but you can mount your own
-volume. Use the example bellow as a guide:
+If you just want to deploy a Kerberos server, you can use docker-compose to bring it up quickly.
+You may want to create and mount a volume on /var/lib/krb5kdc:
 
 ```yml
 volumes:
@@ -43,7 +23,7 @@ volumes:
 
 services:
    kdc:
-     image: gcavalcante8808/krb5-server
+     image: reprostat/kerberos-server-container
      build: .
      restart: always
      ports:
@@ -51,32 +31,41 @@ services:
       - "464:464"
       - "749:749"
      environment:
-       KRB5_REALM: EXAMPLE.COM
+       REALM: example.com
        KRB5_KDC: localhost
      volumes:
       - krb5kdc-data:/var/lib/krb5kdc
 ```
 
-Usage
+## Usage
 -----
 
 You need to supply the following environment variables:
 
- * KRB5_REALM (MANDATORY): Your KRB5 REALM name in Upper Case and DNS format, like EXAMPLE.COM;
- * KRB5_KDC (MANDATORY): Your KRB5 KDC Address. It's recommended that you use a TXT Dns entry, but you can use localhost for a simple installation (if you use localhost you can't setup the KDC slaves later ...);
- * KRB5_ADMINSERVER(OPTIONAL): If not provided will be the same value that was provided for KRB5_KDC;
- * KRB5_PASS: KDB and **admin** password for the database. If you don't provide this value, one will be created and printed in the first time that container is started; **write down this password, it is necessary to login with kadmin and unblock the kdb files**.
+| Environment variables | Description                                                          | Default value                                        |
+| --------------------- | -------------------------------------------------------------------- | ---------------------------------------------------- |
+| `REALM`               | Kerberos/LDAP realm name in DNS format                               | example.com                                          |
+| `KRB5_KDC`            | Kerberos KDC address. It's recommended that you use a text DNS entry | localhost (you can't setup the KDC slaves later)     |
+| `KRB5_ADMINSERVER`    |                                                                      | same value that was provided for `KRB5_KDC`          |
+| `KRB5_ADMIN_PASSWORD` | KDB and **admin** password for the database                          | one will be created and printed in the first startup |
+| `LDAP_URI`            | URI of the LDAP server (e.g., ldap://ldap)                           |                                                      | 
+| `LDAP_DC`             | Domain base (e.g., dc=example,dc=com)                                | generated from `REALM`                               |
+| `LDAP_ADMIN_PASSWORD` | LDAP admin user password                                             |                                                      |
+ 
+**CAVE: write down the KDB/admin password, it is necessary to login with kadmin and unblock the kdb files**
+
+**N.B.: LDAP_\* variables are optional. If they to not exist, then LDAP integration will not be configured**
 
 With all this information, you can now run the container:
 
 ```
-    docker run -d --name krb5-server -e KRB5_REALM=EXAMPLE.COM -e KRB5_KDC=localhost -e KRB5_PASS=mypass -p 88:88 -p 464:464 -p 749:749 gcavalcante8808/krb5-server
+    docker run -d --name kerberos-server -e REALM=example.com -e KRB5_KDC=localhost -e KRB5_ADMIN_PASSWORD=mypass -p 88:88 -p 464:464 -p 749:749 reprostat/kerberos-server-container
 ```
 
 If you haven't provided the password, find it at the logs:
 
 ```
-    docker logs krb5-server
+    docker logs kerberos-server
 ```
 
 To acquire a ticket from your new domain, create a krb5.conf on "/etc" with the following config:
@@ -154,17 +143,13 @@ After this, you just need to restart your container and it is g-n-go.
 Other Information
 -----------------
 
-This container uses the Krb5-Server provided by the Alpine Team. Take a look at the alpine site to verify the available versions of the package.
+This container uses the Kerberos packages provided by the Debian Team. Take a look at the Debian site to verify the available versions of the package.
 
-For more information on how to configure the clients or even the server take a loot at the MIT Krb5 Documentation.
+For more information on how to configure the clients or even the server take a loot at the MIT Kerberos Documentation.
 
 Check the issues page at github if you want to contribute or profile a bug/request/enhancement.
 
-Running Tests
--------------
-
-There are a set of tests (written in python) available on the tests directory. 
-
-You run can the tests by running `make run-tests-on-docker` command.
-
-Note: By Default, it requires docker/docker-compose and make installed and working.
+docker rmi reprostat/kerberos-server-container:latest
+docker build -t reprostat/kerberos-server-container .
+docker run -d --name kerberos-server -e REALM=example.com -e KRB5_KDC=localhost -p 88:88 -p 464:464 -p 749:749 reprostat/kerberos-server-container
+docker logs kerberos-server

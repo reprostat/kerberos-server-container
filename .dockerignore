@@ -1,7 +1,5 @@
-tests/
+.github/
 .git/
 .gitignore
 README.MD
 docker-compose.tests.yaml
-tests/Makefile
-.github/

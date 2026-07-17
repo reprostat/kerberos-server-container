@@ -1,0 +1,36 @@
+name: Build and Publish Docker Image
+
+# Publosh upon releases
+on:
+  release:
+    types: # This configuration does not affect the page_build event above
+      - created
+      - prereleased 
+
+jobs:
+
+  docker_build:
+    name: Run docker build
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build Docker container
+        shell: sh
+        run: |
+          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/openldap:${{ github.ref_name }} .
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/openldap:${{ github.ref_name }}

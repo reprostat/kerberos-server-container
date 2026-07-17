@@ -1,10 +1,8 @@
-ARG ALPINE_VERSION
-
-FROM alpine:${ALPINE_VERSION}
-RUN apk add --no-cache krb5-server krb5 supervisor tini
+FROM docker.io/bitnami/minideb:trixie
+RUN install_packages krb5-kdc-ldap krb5-admin-server supervisor tini
 ADD supervisord.conf /etc/supervisord.conf
 ADD docker-entrypoint.sh /
-VOLUME /var/lib/krb5kdc
+
 EXPOSE 749 464 88
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/docker-entrypoint.sh"]
