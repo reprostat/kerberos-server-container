@@ -16,16 +16,23 @@ if [ -z ${KRB5_ADMINSERVER} ]; then
     KRB5_ADMINSERVER=${KRB5_KDC}
 fi
 
-if [ -z ${LDAP_URI} ]; then
+if [ ! -z ${LDAP_URI} ]; then
+    echo "LDAP_URI provided; LDAP will be configured."
+
+    if [ -z ${LDAP_DC} ]; then
+        LDAP_DC=$(echo $REALM | sed 's/\./,dc=/g; s/^/dc=/')
+    fi
+
+    printf "URI\t\t${LDAP_URI}\n" > /etc/ldap/ldap.conf
+    printf "TLS_CACERT\t${LDAP_CACERT}\n" >> /etc/ldap/ldap.conf
+    printf "BASE\t\t${LDAP_DC}\n" >> /etc/ldap/ldap.conf
+
+else
     echo "No LDAP_URI provided; LDAP integration will not be available."
 fi
 
 if [ ! -e /etc/krb5.conf ] || [ "$(grep -oP '(?<=default_realm = ).*' /etc/krb5.conf)" != "${KRB5_REALM}" ]; then
     echo "No or generic Kerberos client configuration found. Creating one now."
-
-if [ -z ${LDAP_DC} ]; then
-    LDAP_DC=$(echo $REALM | sed 's/\./,dc=/g; s/^/dc=/')
-fi
 
 mkdir -p /var/log/kerberos
 
@@ -51,14 +58,18 @@ EOT1
     if [ ! -z ${LDAP_URI} ]; then
 cat <<EOT2 >> /etc/krb5.conf
     default_domain = ${REALM}
-    database_module = openldap_ldapconf
+    database_module = openldap
  }
+
+[domain_realm]
+ .$REALM = $KRB5_REALM
+ $REALM = $KRB5_REALM
 
 [dbdefaults]
   ldap_kerberos_container_dn = cn=krbContainer,${LDAP_DC}
 
 [dbmodules]
-  openldap_ldapconf = {
+  openldap = {
     db_library = kldap
 
     # if either of these is false, then the ldap_kdc_dn needs to
@@ -116,7 +127,10 @@ cat <<EOT > /var/lib/krb5kdc/kdc.conf
 EOT
 
     if [ ! -z ${LDAP_URI} ]; then
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -P "$KRB5_ADMIN_PASSWORD" -s
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
+$KRB5_ADMIN_PASSWORD
+$KRB5_ADMIN_PASSWORD
+EOT
 
         kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,${LDAP_DC} << EOT
 $LDAP_KDC_PASSWORD
