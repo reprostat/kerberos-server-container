@@ -118,8 +118,14 @@ EOT
     if [ ! -z ${LDAP_URI} ]; then
         kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -P "$KRB5_ADMIN_PASSWORD" -s
 
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,${LDAP_DC}
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,${LDAP_DC}
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,${LDAP_DC} << EOT
+$LDAP_KDC_PASSWORD
+$LDAP_KDC_PASSWORD
+EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,${LDAP_DC} << EOT
+$LDAP_KADMIN_PASSWORD
+$LDAP_KADMIN_PASSWORD
+EOT
 
         touch /kerberos_initialized
     else

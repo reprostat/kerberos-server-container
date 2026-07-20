@@ -51,10 +51,12 @@ You need to supply the following environment variables:
 | `LDAP_URI`            | URI of the LDAP server (e.g., ldap://ldap)                           |                                                      | 
 | `LDAP_DC`             | Domain base (e.g., dc=example,dc=com)                                | generated from `REALM`                               |
 | `LDAP_ADMIN_PASSWORD` | LDAP admin user password                                             |                                                      |
+| `LDAP_KADMIN_PASSWORD`| cn=kadmin user password in LDAP                                      |                                                      |
+| `LDAP_KDC_PASSWORD`   | cn=kdc user password in LDAP                                         |                                                      |
  
 **CAVE: write down the KDB/admin password, it is necessary to login with kadmin and unblock the kdb files**
 
-**N.B.: LDAP_\* variables are optional. If they to not exist, then LDAP integration will not be configured**
+**N.B.: LDAP_\* variables are optional. If they to not exist (only LDAP_URI is checked), then LDAP integration will not be configured**
 
 With all this information, you can now run the container:
 
@@ -148,8 +150,3 @@ This container uses the Kerberos packages provided by the Debian Team. Take a lo
 For more information on how to configure the clients or even the server take a loot at the MIT Kerberos Documentation.
 
 Check the issues page at github if you want to contribute or profile a bug/request/enhancement.
-
-docker rmi reprostat/kerberos-server-container:latest
-docker build -t reprostat/kerberos-server-container .
-docker run -d --name kerberos-server -e REALM=example.com -e KRB5_KDC=localhost -p 88:88 -p 464:464 -p 749:749 reprostat/kerberos-server-container
-docker logs kerberos-server
