@@ -16,6 +16,12 @@ if [ -z ${KRB5_ADMINSERVER} ]; then
     KRB5_ADMINSERVER=${KRB5_KDC}
 fi
 
+if [ -z ${KRB5_ADMIN_PASSWORD} ]; then
+    echo "No Password for kdb provided; Creating one now."
+    KRB5_ADMIN_PASSWORD=$(</dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
+    echo "Using Password ${KRB5_ADMIN_PASSWORD}"
+fi
+
 if [ ! -z ${LDAP_URI} ]; then
     echo "LDAP_URI provided; LDAP will be configured."
 
@@ -32,9 +38,13 @@ else
 fi
 
 if [ ! -e /etc/krb5.conf ] || [ "$(grep -oP '(?<=default_realm = ).*' /etc/krb5.conf)" != "${KRB5_REALM}" ]; then
-    echo "No or generic Kerberos client configuration found. Creating one now."
+    echo "No or generic Kerberos server configuration found. Creating one now."
 
-mkdir -p /var/log/kerberos
+    echo "Cleaning Kerberos configuration"
+    rm -rf /etc/krb5kdc
+    mkdir -p /etc/krb5kdc
+
+    mkdir -p /var/log/kerberos
 
 cat <<EOT1 > /etc/krb5.conf
 [logging]
@@ -99,15 +109,26 @@ echo "Creating default policy - Admin access for */admin"
 echo "*/admin@${KRB5_REALM} *" > /etc/krb5kdc/kadm5.acl
 echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
 
-if [ ! -f "/var/lib/krb5kdc/principal" ] && [ ! -f "/kerberos_initialized" ]; then
+if [ ! -z ${LDAP_URI} ] && [ ! -f "/kerberos_initialized" ]; then
+    echo "Initializing Krb5 database with LDAP backend"
 
-    echo "No Krb5 database found. Creating one now."
+    kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
+$KRB5_ADMIN_PASSWORD
+$KRB5_ADMIN_PASSWORD
+EOT
 
-    if [ -z ${KRB5_ADMIN_PASSWORD} ]; then
-        echo "No Password for kdb provided; Creating one now."
-        KRB5_ADMIN_PASSWORD=$(</dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
-        echo "Using Password ${KRB5_ADMIN_PASSWORD}"
-    fi
+    kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,ou=system,${LDAP_DC} << EOT
+$LDAP_KDC_PASSWORD
+$LDAP_KDC_PASSWORD
+EOT
+    kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,ou=system,${LDAP_DC} << EOT
+$LDAP_KADMIN_PASSWORD
+$LDAP_KADMIN_PASSWORD
+EOT
+
+    touch /kerberos_initialized
+elif [ ! -f "/var/lib/krb5kdc/principal" ] ; then
+    echo "Initializing Krb5 database with db2 backend"
 
     echo "Creating KDC configuration"
 cat <<EOT > /var/lib/krb5kdc/kdc.conf
@@ -126,30 +147,11 @@ cat <<EOT > /var/lib/krb5kdc/kdc.conf
     }
 EOT
 
-    if [ ! -z ${LDAP_URI} ]; then
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
-$KRB5_ADMIN_PASSWORD
-$KRB5_ADMIN_PASSWORD
-EOT
+    echo "Creating database"
+    kdb5_util create -r ${KRB5_REALM} -s -P ${KRB5_ADMIN_PASSWORD}
 
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,ou=system,${LDAP_DC} << EOT
-$LDAP_KDC_PASSWORD
-$LDAP_KDC_PASSWORD
-EOT
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,ou=system,${LDAP_DC} << EOT
-$LDAP_KADMIN_PASSWORD
-$LDAP_KADMIN_PASSWORD
-EOT
-
-        touch /kerberos_initialized
-    else
-    
-        echo "Creating database"
-        kdb5_util create -r ${KRB5_REALM} -s -P ${KRB5_ADMIN_PASSWORD}
-
-        echo "Creating admin account"
-        kadmin.local -q "addprinc -pw ${KRB5_ADMIN_PASSWORD} admin/admin@${KRB5_REALM}"
-    fi
+    echo "Creating admin account"
+    kadmin.local -q "addprinc -pw ${KRB5_ADMIN_PASSWORD} admin/admin@${KRB5_REALM}"
 fi
 
 /usr/bin/supervisord -c /etc/supervisord.conf
