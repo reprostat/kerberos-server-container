@@ -40,10 +40,6 @@ fi
 if [ ! -e /etc/krb5.conf ] || [ "$(grep -oP '(?<=default_realm = ).*' /etc/krb5.conf)" != "${KRB5_REALM}" ]; then
     echo "No or generic Kerberos server configuration found. Creating one now."
 
-    echo "Cleaning Kerberos configuration"
-    rm -rf /etc/krb5kdc
-    mkdir -p /etc/krb5kdc
-
     mkdir -p /var/log/kerberos
 
 cat <<EOT1 > /etc/krb5.conf
@@ -105,12 +101,11 @@ EOT2
     fi
 fi
 
-echo "Creating default policy - Admin access for */admin"
-echo "*/admin@${KRB5_REALM} *" > /etc/krb5kdc/kadm5.acl
-echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
-
 if [ ! -z ${LDAP_URI} ] && [ ! -f "/kerberos_initialized" ]; then
     echo "Initializing Krb5 database with LDAP backend"
+
+    echo "Creating default policy - Admin access for */admin"
+    echo "*/admin@${KRB5_REALM} *" > /etc/krb5kdc/kadm5.acl
 
     kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
 $KRB5_ADMIN_PASSWORD
@@ -129,6 +124,9 @@ EOT
     touch /kerberos_initialized
 elif [ ! -f "/var/lib/krb5kdc/principal" ] ; then
     echo "Initializing Krb5 database with db2 backend"
+
+    echo "Creating default policy - Admin access for */admin"
+    echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
 
     echo "Creating KDC configuration"
 cat <<EOT > /var/lib/krb5kdc/kdc.conf

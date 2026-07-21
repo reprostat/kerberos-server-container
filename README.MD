@@ -20,6 +20,11 @@ You may want to create and mount a volume on /var/lib/krb5kdc:
 ```yml
 volumes:
   kerberos-server-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /tmp/kerberos-server-data
 
 services:
   kerberos-server:
@@ -39,7 +44,7 @@ services:
       - 464:464
       - 749:749
     volumes:
-      - kerberos-server-data:/var/lib/krb5kdc
+      - kerberos-server-data:/etc/krb5kdc
       - $PWD/ca.crt:/etc/ldap/ca.crt
 ```
 
