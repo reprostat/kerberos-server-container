@@ -79,11 +79,11 @@ cat <<EOT2 >> /etc/krb5.conf
 
     # this object needs to have read rights on
     # the realm container, principal container and realm sub-trees
-    ldap_kdc_dn = "uid=kdc-service,${LDAP_DC}"
+    ldap_kdc_dn = "uid=kdc-service,ou=system,${LDAP_DC}"
 
     # this object needs to have read and write rights on
     # the realm container, principal container and realm sub-trees
-    ldap_kadmind_dn = "uid=kadmin-service,${LDAP_DC}"
+    ldap_kadmind_dn = "uid=kadmin-service,ou=system,${LDAP_DC}"
 
     ldap_service_password_file = /etc/krb5kdc/service.keyfile
     ldap_servers = ${LDAP_URI}
@@ -132,11 +132,11 @@ $KRB5_ADMIN_PASSWORD
 $KRB5_ADMIN_PASSWORD
 EOT
 
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,${LDAP_DC} << EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,ou=system,${LDAP_DC} << EOT
 $LDAP_KDC_PASSWORD
 $LDAP_KDC_PASSWORD
 EOT
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,${LDAP_DC} << EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,ou=system,${LDAP_DC} << EOT
 $LDAP_KADMIN_PASSWORD
 $LDAP_KADMIN_PASSWORD
 EOT
