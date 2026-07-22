@@ -31,6 +31,10 @@ if [ ! -z ${LDAP_URI} ]; then
 
     printf "URI\t\t${LDAP_URI}\n" > /etc/ldap/ldap.conf
     printf "TLS_CACERT\t${LDAP_CACERT}\n" >> /etc/ldap/ldap.conf
+    if [ ! -z ${LDAP_CERT} ]; then
+        printf "TLS_CERT\t\t${LDAP_CERT}\n" >> /etc/ldap/ldap.conf
+        printf "TLS_KEY\t\t${LDAP_KEY}\n" >> /etc/ldap/ldap.conf
+    fi
     printf "BASE\t\t${LDAP_DC}\n" >> /etc/ldap/ldap.conf
 
 else

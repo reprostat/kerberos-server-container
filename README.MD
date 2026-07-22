@@ -64,6 +64,8 @@ You need to supply the following environment variables:
 | `KRB5_ADMIN_PASSWORD` | KDB and **admin** password for the database                          | one will be created and printed in the first startup |
 | `LDAP_URI`            | URI of the LDAP server (e.g., ldaps://ldap)                          |                                                      | 
 | `LDAP_CACERT`         | CA certificate for the LDAP server when using TLS (i.e., ldaps://)   |                                                      | 
+| `LDAP_CERT`           | Client certificate for the LDAP server when using mTLS               |                                                      | 
+| `LDAP_KEY`            | Key to the client certificate for the LDAP server when using mTLS    |                                                      | 
 | `LDAP_DC`             | Domain base (e.g., dc=example,dc=com)                                | generated from `REALM`                               |
 | `LDAP_ADMIN_PASSWORD` | LDAP admin user password                                             |                                                      |
 | `LDAP_KADMIN_PASSWORD`| cn=kadmin user password in LDAP                                      |                                                      |
