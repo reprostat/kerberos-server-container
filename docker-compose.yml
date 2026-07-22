@@ -10,7 +10,9 @@ services:
   kerberos-server:
     container_name: kerberos-server
     image: reprostat/kerberos-server-container:latest
-    build: .
+    build:
+      context: .
+      dockerfile: primary.dockerfile
     environment:
       - REALM=example.com
       - KRB5_KDC=localhost

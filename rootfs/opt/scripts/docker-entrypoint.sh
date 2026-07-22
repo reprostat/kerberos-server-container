@@ -101,7 +101,7 @@ EOT2
     fi
 fi
 
-if [ ! -z ${LDAP_URI} ] && [ ! -f "/kerberos_initialized" ]; then
+if [ ! -z ${LDAP_URI} ] && [ ! -f "/etc/krb5kdc/kerberos_initialized" ]; then
     echo "Initializing Krb5 database with LDAP backend"
 
     echo "Creating default policy - Admin access for */admin"
@@ -121,8 +121,8 @@ $LDAP_KADMIN_PASSWORD
 $LDAP_KADMIN_PASSWORD
 EOT
 
-    touch /kerberos_initialized
-elif [ ! -f "/var/lib/krb5kdc/principal" ] ; then
+    touch /etc/krb5kdc/kerberos_initialized
+elif [ -z ${LDAP_URI} ] && [ ! -f "/var/lib/krb5kdc/principal" ] ; then
     echo "Initializing Krb5 database with db2 backend"
 
     echo "Creating default policy - Admin access for */admin"
@@ -150,6 +150,8 @@ EOT
 
     echo "Creating admin account"
     kadmin.local -q "addprinc -pw ${KRB5_ADMIN_PASSWORD} admin/admin@${KRB5_REALM}"
+else
+    echo "Krb5 database already initialized. Skipping initialization."
 fi
 
 /usr/bin/supervisord -c /etc/supervisord.conf
