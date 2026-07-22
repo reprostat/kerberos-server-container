@@ -36,7 +36,7 @@ services:
       dockerfile: primary.dockerfile
     environment:
       - REALM=example.com
-      - KRB5_KDC=localhost
+      - KRB5_PRIMARY_SERVER=localhost
       - LDAP_URI=ldaps://10.10.10.10
       - LDAP_CACERT=/etc/ldap/ca.crt
       - LDAP_ADMIN_PASSWORD=adminpass
@@ -56,20 +56,20 @@ services:
 
 You need to supply the following environment variables:
 
-| Environment variables | Description                                                          | Default value                                        |
-| --------------------- | -------------------------------------------------------------------- | ---------------------------------------------------- |
-| `REALM`               | Kerberos/LDAP realm name in DNS format                               | example.com                                          |
-| `KRB5_KDC`            | Kerberos KDC address. It's recommended that you use a text DNS entry | localhost (you can't setup the KDC slaves later)     |
-| `KRB5_ADMINSERVER`    |                                                                      | same value that was provided for `KRB5_KDC`          |
-| `KRB5_ADMIN_PASSWORD` | KDB and **admin** password for the database                          | one will be created and printed in the first startup |
-| `LDAP_URI`            | URI of the LDAP server (e.g., ldaps://ldap)                          |                                                      | 
-| `LDAP_CACERT`         | CA certificate for the LDAP server when using TLS (i.e., ldaps://)   |                                                      | 
-| `LDAP_CERT`           | Client certificate for the LDAP server when using mTLS               |                                                      | 
-| `LDAP_KEY`            | Key to the client certificate for the LDAP server when using mTLS    |                                                      | 
-| `LDAP_DC`             | Domain base (e.g., dc=example,dc=com)                                | generated from `REALM`                               |
-| `LDAP_ADMIN_PASSWORD` | LDAP admin user password                                             |                                                      |
-| `LDAP_KADMIN_PASSWORD`| cn=kadmin user password in LDAP                                      |                                                      |
-| `LDAP_KDC_PASSWORD`   | cn=kdc user password in LDAP                                         |                                                      |
+| Environment variables   | Description                                                                              | Default value                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `REALM`                 | Kerberos/LDAP realm name in DNS format                                                   | example.com                                            |
+| `KRB5_PRIMARY_SERVER`   | Address to the primary server (also running admin-server). Text DNS entry is recommended | localhost (you can't setup the KDC slaves later)       |
+| `KRB5_SECONDARY_SERVER` |                                                                                          | same value that was provided for `KRB5_PRIMARY_SERVER` |
+| `KRB5_ADMIN_PASSWORD`   | KDB and **admin** password for the database                                              | one will be created and printed in the first startup   |
+| `LDAP_URI`              | URI of the LDAP server (e.g., ldaps://ldap)                                              |                                                        |
+| `LDAP_CACERT`           | CA certificate for the LDAP server when using TLS (i.e., ldaps://)                       |                                                        | 
+| `LDAP_CERT`             | Client certificate for the LDAP server when using mTLS                                   |                                                        | 
+| `LDAP_KEY`              | Key to the client certificate for the LDAP server when using mTLS                        |                                                        | 
+| `LDAP_DC`               | Domain base (e.g., dc=example,dc=com)                                                    | generated from `REALM`                                 |
+| `LDAP_ADMIN_PASSWORD`   | LDAP admin user password                                                                 |                                                        |
+| `LDAP_KADMIN_PASSWORD`  | cn=kadmin user password in LDAP                                                          |                                                        |
+| `LDAP_KDC_PASSWORD`     | cn=kdc user password in LDAP                                                             |                                                        |
  
 **CAVE: write down the KDB/admin password, it is necessary to login with kadmin and unblock the kdb files**
 
@@ -78,7 +78,7 @@ You need to supply the following environment variables:
 With all this information, you can now run the container:
 
 ```
-    docker run -d --name kerberos-server -e REALM=example.com -e KRB5_KDC=localhost -e KRB5_ADMIN_PASSWORD=mypass -p 88:88 -p 464:464 -p 749:749 reprostat/kerberos-server-container
+    docker run -d --name kerberos-server -e REALM=example.com -e KRB5_PRIMARY_SERVER=localhost -e KRB5_ADMIN_PASSWORD=mypass -p 88:88 -p 464:464 -p 749:749 reprostat/kerberos-server-container
 ```
 
 If you haven't provided the password, find it at the logs:

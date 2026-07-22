@@ -6,9 +6,9 @@ if [ -z ${REALM} ]; then
 fi
 KRB5_REALM=$(echo $REALM | tr '[:lower:]' '[:upper:]')
 
-if [ -z ${KRB5_KDC} ]; then
-    echo "No KRB5_KDC provided. Using localhost instead."
-    KRB5_KDC=localhost
+if [ -z ${KRB5_PRIMARY_SERVER} ]; then
+    echo "No KRB5_PRIMARY_SERVER provided. Using localhost instead."
+    KRB5_PRIMARY_SERVER=localhost
 fi
 
 if [ -z ${KRB5_ADMINSERVER} ]; then
@@ -46,7 +46,7 @@ if [ ! -e /etc/krb5.conf ] || [ "$(grep -oP '(?<=default_realm = ).*' /etc/krb5.
 
     mkdir -p /var/log/kerberos
 
-cat <<EOT1 > /etc/krb5.conf
+cat <<EOT > /etc/krb5.conf
 [logging]
     kdc = FILE:/var/log/kerberos/krb5kdc.log
     admin_server = FILE:/var/log/kerberos/kadmin.log
@@ -62,11 +62,14 @@ cat <<EOT1 > /etc/krb5.conf
  
  [realms]
  ${KRB5_REALM} = {
-    kdc = ${KRB5_KDC}
-    admin_server = ${KRB5_ADMINSERVER}
-EOT1
+    admin_server = ${KRB5_PRIMARY_SERVER}
+    kdc = ${KRB5_PRIMARY_SERVER}
+EOT
+    if [ ! -z ${KRB5_SECONDARY_SERVER} ]; then
+        echo "    kdc = ${KRB5_SECONDARY_SERVER}" >> /etc/krb5.conf
+    fi
     if [ ! -z ${LDAP_URI} ]; then
-cat <<EOT2 >> /etc/krb5.conf
+cat <<EOT >> /etc/krb5.conf
     default_domain = ${REALM}
     database_module = openldap
  }
@@ -99,7 +102,7 @@ cat <<EOT2 >> /etc/krb5.conf
     ldap_servers = ${LDAP_URI}
     ldap_conns_per_server = 5
   }
-EOT2
+EOT
     else    
         echo " }" >> /etc/krb5.conf
     fi
@@ -155,7 +158,7 @@ EOT
     echo "Creating admin account"
     kadmin.local -q "addprinc -pw ${KRB5_ADMIN_PASSWORD} admin/admin@${KRB5_REALM}"
 else
-    echo "Krb5 database already initialized. Skipping initialization."
+    echo "Krb5 database already initialized. Skipping initialization. Password for kdb is unchanged."
 fi
 
 /usr/bin/supervisord -c /etc/supervisord.conf

@@ -15,7 +15,7 @@ services:
       dockerfile: primary.dockerfile
     environment:
       - REALM=example.com
-      - KRB5_KDC=localhost
+      - KRB5_PRIMARY_SERVER=localhost
       - LDAP_URI=ldaps://10.10.10.10
       - LDAP_CACERT=/etc/ldap/ca.crt
       - LDAP_ADMIN_PASSWORD=adminpass
