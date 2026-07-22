@@ -23,8 +23,8 @@ jobs:
       - name: Build Docker containers
         shell: sh
         run: |
-          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:${{ github.ref_name }} -f primary.dockerfile .
-          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:${{ github.ref_name }} -f secondary.dockerfile .
+          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:${{ github.ref_name }} -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:latest -f primary.dockerfile .
+          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:${{ github.ref_name }} -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:latest -f secondary.dockerfile .
 
       - name: Log in to DockerHub
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
@@ -36,3 +36,5 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:${{ github.ref_name }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:${{ github.ref_name }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:latest
