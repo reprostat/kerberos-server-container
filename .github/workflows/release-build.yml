@@ -20,21 +20,32 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Build Docker containers
-        shell: sh
-        run: |
-          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:${{ github.ref_name }} -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:latest -f primary.dockerfile .
-          docker build --pull --no-cache --force-rm -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:${{ github.ref_name }} -t ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:latest -f secondary.dockerfile .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
-      - name: Log in to DockerHub
+      - name: Login to DockerHub
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Push Docker images
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:${{ github.ref_name }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:${{ github.ref_name }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:latest
+      - name: Build and push primary server container image
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: primary.dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-primary-container:latest
+
+      - name: Build and push secondary server container image
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: secondary.dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/kerberos-secondary-container:latest
+
