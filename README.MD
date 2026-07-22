@@ -5,11 +5,12 @@
 ## Kerberos server
 -----------
 
-This is a reprostat fork of the gcavalcante8808/krb5-server image with MIT Kerberos v5.
+This is a reprostat fork of the gcavalcante8808/krb5-server image with MIT Kerberos v5, which allows to deploy a Kerberos server with optional LDAP backend.
 
 Modifications:
-  - installed on Debian trixie as base image
-  - /etc/krb5.conf can be provided
+  - installed on ubuntu as base image
+  - previous configuration, including /etc/krb5.conf and database can be provided
+  - LDAP backend can be specified
 
 ## Deployment
 ------------
@@ -30,7 +31,9 @@ services:
   kerberos-server:
     container_name: kerberos-server
     image: reprostat/kerberos-server-container:latest
-    build: .
+    build:
+      context: .
+      dockerfile: primary.dockerfile
     environment:
       - REALM=example.com
       - KRB5_KDC=localhost
