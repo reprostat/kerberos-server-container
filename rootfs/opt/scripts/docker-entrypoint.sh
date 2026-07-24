@@ -108,34 +108,33 @@ EOT
     fi
 fi
 
-if [ ! -z ${LDAP_URI} ] && [ ! -f "/etc/krb5kdc/kerberos_initialized" ]; then
-    echo "Initializing Krb5 database with LDAP backend"
+if [ ! -f "/etc/krb5kdc/kerberos_initialized" ]; then
+    if [ ! -z ${LDAP_URI} ]; then
+        echo "Initializing Krb5 database with LDAP backend"
 
-    echo "Creating default policy - Admin access for */admin"
-    echo "*/admin@${KRB5_REALM} *" > /etc/krb5kdc/kadm5.acl
+        echo "Creating default policy - Admin access for */admin"
+        echo "*/admin@${KRB5_REALM} *" > /etc/krb5kdc/kadm5.acl
 
-    kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
 $KRB5_ADMIN_PASSWORD
 $KRB5_ADMIN_PASSWORD
 EOT
 
-    kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,ou=system,${LDAP_DC} << EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,ou=system,${LDAP_DC} << EOT
 $LDAP_KDC_PASSWORD
 $LDAP_KDC_PASSWORD
 EOT
-    kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,ou=system,${LDAP_DC} << EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,ou=system,${LDAP_DC} << EOT
 $LDAP_KADMIN_PASSWORD
 $LDAP_KADMIN_PASSWORD
 EOT
+    else
+        echo "Initializing Krb5 database with db2 backend"
 
-    touch /etc/krb5kdc/kerberos_initialized
-elif [ -z ${LDAP_URI} ] && [ ! -f "/var/lib/krb5kdc/principal" ] ; then
-    echo "Initializing Krb5 database with db2 backend"
+        echo "Creating default policy - Admin access for */admin"
+        echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
 
-    echo "Creating default policy - Admin access for */admin"
-    echo "*/admin@${KRB5_REALM} *" > /var/lib/krb5kdc/kadm5.acl
-
-    echo "Creating KDC configuration"
+        echo "Creating KDC configuration"
 cat <<EOT > /var/lib/krb5kdc/kdc.conf
 [kdcdefaults]
     kdc_listen = 88
@@ -152,11 +151,13 @@ cat <<EOT > /var/lib/krb5kdc/kdc.conf
     }
 EOT
 
-    echo "Creating database"
-    kdb5_util create -r ${KRB5_REALM} -s -P ${KRB5_ADMIN_PASSWORD}
-
+        echo "Creating database"
+        kdb5_util create -r ${KRB5_REALM} -s -P ${KRB5_ADMIN_PASSWORD}
+    fi
     echo "Creating admin account"
     kadmin.local -q "addprinc -pw ${KRB5_ADMIN_PASSWORD} admin/admin@${KRB5_REALM}"
+
+    touch /etc/krb5kdc/kerberos_initialized    
 else
     echo "Krb5 database already initialized. Skipping initialization. Password for kdb is unchanged."
 fi
