@@ -40,7 +40,9 @@ services:
       - LDAP_URI=ldaps://10.10.10.10
       - LDAP_CACERT=/etc/ldap/ca.crt
       - LDAP_ADMIN_PASSWORD=adminpass
+      - LDAP_KADMIN_SUBDN=cn=kadmin
       - LDAP_KADMIN_PASSWORD=kadminpass
+      - LDAP_KDC_SUBDN=cn=kdc
       - LDAP_KDC_PASSWORD=kdcpass
     ports:
       - 88:88
@@ -57,7 +59,7 @@ services:
 You need to supply the following environment variables:
 
 | Environment variables   | Description                                                                              | Default value                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| ----------------------- | -----------------------------------------------------------------------------------------| ------------------------------------------------------ |
 | `REALM`                 | Kerberos/LDAP realm name in DNS format                                                   | example.com                                            |
 | `KRB5_PRIMARY_SERVER`   | Address to the primary server (also running admin-server). Text DNS entry is recommended | localhost (you can't setup the KDC slaves later)       |
 | `KRB5_SECONDARY_SERVER` |                                                                                          | same value that was provided for `KRB5_PRIMARY_SERVER` |
@@ -68,7 +70,9 @@ You need to supply the following environment variables:
 | `LDAP_KEY`              | Key to the client certificate for the LDAP server when using mTLS                        |                                                        | 
 | `LDAP_DC`               | Domain base (e.g., dc=example,dc=com)                                                    | generated from `REALM`                                 |
 | `LDAP_ADMIN_PASSWORD`   | LDAP admin user password                                                                 |                                                        |
+| `LDAP_KADMIN_SUBDN`     | kadmin service account subDN in LDAP to be appended with `LDAP_DC` (e.g., cn=kadmin)     |                                                        |
 | `LDAP_KADMIN_PASSWORD`  | cn=kadmin user password in LDAP                                                          |                                                        |
+| `LDAP_KDC_SUBDN`        | kdc service account subDN in LDAP to be appended with `LDAP_DC` (e.g., cn=kdc)           |                                                        |
 | `LDAP_KDC_PASSWORD`     | cn=kdc user password in LDAP                                                             |                                                        |
  
 **CAVE: write down the KDB/admin password, it is necessary to login with kadmin and unblock the kdb files**

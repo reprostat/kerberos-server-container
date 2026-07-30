@@ -92,11 +92,11 @@ cat <<EOT >> /etc/krb5.conf
 
     # this object needs to have read rights on
     # the realm container, principal container and realm sub-trees
-    ldap_kdc_dn = "uid=kdc-service,ou=system,${LDAP_DC}"
+    ldap_kdc_dn = "${LDAP_KDC_SUBDN},${LDAP_DC}"
 
     # this object needs to have read and write rights on
     # the realm container, principal container and realm sub-trees
-    ldap_kadmind_dn = "uid=kadmin-service,ou=system,${LDAP_DC}"
+    ldap_kadmind_dn = "${LDAP_KADMIN_SUBDN},${LDAP_DC}"
 
     ldap_service_password_file = /etc/krb5kdc/service.keyfile
     ldap_servers = ${LDAP_URI}
@@ -115,16 +115,37 @@ if [ ! -f "/etc/krb5kdc/kerberos_initialized" ]; then
         echo "Creating default policy - Admin access for */admin"
         echo "*/admin@${KRB5_REALM} *" > /etc/krb5kdc/kadm5.acl
 
+        echo "Creating LDAP domain container for ${KRB5_REALM}"
+        
         kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" -H $LDAP_URI create -subtrees $LDAP_DC -r $KRB5_REALM -s << EOT
 $KRB5_ADMIN_PASSWORD
 $KRB5_ADMIN_PASSWORD
 EOT
 
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kdc-service,ou=system,${LDAP_DC} << EOT
+        echo "Creating LDAP service accounts for KDC and Admin server"
+
+        ldapadd -H ${LDAP_URI} -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" <<EOT
+dn: ${LDAP_KADMIN_SUBDN},${LDAP_DC}
+$(echo ${LDAP_KADMIN_SUBDN} | grep -oP '^[^,]*' | sed s/=/:\ /)
+objectClass: inetOrgPerson
+objectClass: simpleSecurityObject
+sn: kadmin
+userPassword: ${LDAP_KADMIN_PASSWORD}
+description: Account used for the Kerberos Admin server
+
+dn: ${LDAP_KDC_SUBDN},${LDAP_DC}
+$(echo ${LDAP_KDC_SUBDN} | grep -oP '^[^,]*' | sed s/=/:\ /)
+objectClass: inetOrgPerson
+objectClass: simpleSecurityObject
+sn: kdc
+userPassword: ${LDAP_KDC_PASSWORD}
+description: Account used for the Kerberos KDC
+EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile ${LDAP_KDC_SUBDN},${LDAP_DC} << EOT
 $LDAP_KDC_PASSWORD
 $LDAP_KDC_PASSWORD
 EOT
-        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile uid=kadmin-service,ou=system,${LDAP_DC} << EOT
+        kdb5_ldap_util -D cn=admin,${LDAP_DC} -w "$LDAP_ADMIN_PASSWORD" stashsrvpw -f /etc/krb5kdc/service.keyfile ${LDAP_KADMIN_SUBDN},${LDAP_DC} << EOT
 $LDAP_KADMIN_PASSWORD
 $LDAP_KADMIN_PASSWORD
 EOT

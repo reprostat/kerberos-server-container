@@ -19,7 +19,9 @@ services:
       - LDAP_URI=ldaps://10.10.10.10
       - LDAP_CACERT=/etc/ldap/ca.crt
       - LDAP_ADMIN_PASSWORD=adminpass
+      - LDAP_KADMIN_SUBDN=cn=kadmin
       - LDAP_KADMIN_PASSWORD=kadminpass
+      - LDAP_KDC_SUBDN=cn=kdc
       - LDAP_KDC_PASSWORD=kdcpass
     ports:
       - 88:88
